@@ -1,17 +1,21 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour {
+    public string nextLevelString;
+
     public GameObject manaBar;
     public GameObject gemMenuPanel;
+    public GameObject fadeToBlackPanel;
     public float runSpeed;
     public float manaDecay;
     public float maxMana;
 
     public float jumpHeight;
     public float floatManaCost;
-    public PhysicsMaterial2D bouncyMaterial;
 
     public Transform groundCheckTop_Left;
     public Transform groundCheckBottomRight;
@@ -21,11 +25,17 @@ public class PlayerController : MonoBehaviour {
     private bool grounded = true;
     private bool prevPWM = false;
 
+    private bool noUpdate = false;
+
     private float mana;
     private List<string> disabledKeys;
 
     private Dictionary<string, GameObject> UIButtons;
     private Dictionary<string, System.Action> restoreFunctions;
+
+    private float fadeFrameCount = 0.0f;
+    private float fadeFramesTotal = 60.0f;
+    private bool fadingOut = false;
 
     // Start is called before the first frame update
     void Start()
@@ -46,19 +56,37 @@ public class PlayerController : MonoBehaviour {
 
     void FixedUpdate() {
         grounded = Physics2D.OverlapArea(groundCheckTop_Left.position, groundCheckBottomRight.position, groundLayers);
-    }
-
-    private void OnTriggerEnter2D(Collider2D collision) {
-        if (disabledKeys.Find(x => x.Equals(collision.tag.ToLower())) != null) {
-            ReclaimKey(collision.tag);
-            Destroy(collision.gameObject);
+        if (!fadingOut) {
+            fadeToBlackPanel.GetComponent<Image>().color = new Color(0, 0, 0, (fadeFramesTotal - Mathf.Min(fadeFrameCount, fadeFramesTotal)) / fadeFramesTotal);
+            fadeFrameCount++;
+        } else {
+            fadeToBlackPanel.GetComponent<Image>().color = new Color(0, 0, 0, (fadeFramesTotal - Mathf.Max(fadeFrameCount, 0)) / fadeFramesTotal);
+            fadeFrameCount--;
         }
     }
 
-    // Update is called once per frame
-    void Update() {
+    private void OnTriggerStay2D(Collider2D collision) {
+        if (disabledKeys.Find(x => x.Equals(collision.tag.ToLower())) != null) {
+            ReclaimKey(collision.tag);
+            Destroy(collision.gameObject);
+        } else if (collision.CompareTag("Skull")) {
+            Destroy(collision.gameObject);
+            mana -= 10;
+        }
+    }
+    private void OnTriggerEnter2D(Collider2D collision) {
+        if (collision.CompareTag("EndZone") && !noUpdate) {
+            NextLevel();
+        }
+    }
 
-        mana -= manaDecay * Time.deltaTime;
+        // Update is called once per frame
+    void Update() {
+        if (noUpdate) {
+            return;
+        }
+
+        mana -= (manaDecay - (disabledKeys.Count * 5)) * Time.deltaTime;
 
         if (mana <= 0 || transform.position.y < -1.0f) {
             GameOver();
@@ -138,7 +166,7 @@ public class PlayerController : MonoBehaviour {
 
         switch(key) {
             case "w":
-                AddMana(20);
+                AddMana(100);
                 float gscale = rigidBody.gravityScale;
                 void WRestore() {
                     rigidBody.gravityScale = gscale;
@@ -146,16 +174,10 @@ public class PlayerController : MonoBehaviour {
                 restoreFunctions[key] = WRestore;
                 break;
             case "a":
-                AddMana(20);
+                AddMana(100);
                 break;
             case "s":
-                PhysicsMaterial2D prevMat = rigidBody.sharedMaterial;
-                void SRestore() {
-                    rigidBody.sharedMaterial = prevMat;
-                }
-                rigidBody.sharedMaterial = bouncyMaterial;
-                restoreFunctions[key] = SRestore;
-                AddMana(20);
+                AddMana(100);
                 break;
             case "d":
                 float prevSpeed = runSpeed;
@@ -163,10 +185,10 @@ public class PlayerController : MonoBehaviour {
                     runSpeed = prevSpeed;
                 }
                 restoreFunctions[key] = DRestore;
-                AddMana(20);
+                AddMana(100);
                 break;
             case "e":
-                AddMana(20);
+                AddMana(100);
                 break;
             case "space":
                 float prevJumpHeight = jumpHeight;
@@ -190,6 +212,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     bool DisabledKeyEffect(KeyCode key) {
+        bool inCycle;
         switch (key) {
             case KeyCode.W:
                 rigidBody.gravityScale = 0.5f/disabledKeys.Count;
@@ -197,8 +220,7 @@ public class PlayerController : MonoBehaviour {
             case KeyCode.A:
                 return (int)Time.time % disabledKeys.Count == 0;
             case KeyCode.S:
-                rigidBody.sharedMaterial.bounciness = disabledKeys.Count;
-                bool inCycle = (int)(Time.time * 2) % (disabledKeys.Count * 2) == 0;
+                inCycle = (int)(Time.time * 2) % (disabledKeys.Count * 2) == 0;
                 if (!prevPWM) {
                     prevPWM = inCycle;
                     return inCycle;
@@ -209,9 +231,15 @@ public class PlayerController : MonoBehaviour {
                 runSpeed = disabledKeys.Count + 2;
                 return true;
             case KeyCode.E:
+                inCycle = (int)(Time.time * 2) % (disabledKeys.Count * 2) == 0;
+                if (!prevPWM) {
+                    prevPWM = inCycle;
+                    return inCycle;
+                }
+                prevPWM = inCycle;
                 return false;
             case KeyCode.Space:
-                jumpHeight = disabledKeys.Count;
+                jumpHeight = disabledKeys.Count + 2;
                 return true;
             default:
                 return false;
@@ -224,5 +252,25 @@ public class PlayerController : MonoBehaviour {
 
     void GameOver() {
         Debug.Log("YOU LOSE");
+        noUpdate = true;
+    }
+
+    void NextLevel() {
+        noUpdate = true;
+        fadingOut = true;
+        fadeFrameCount = fadeFramesTotal;
+        StartCoroutine(LoadLevel());
+    }
+
+    IEnumerator LoadLevel() {
+        yield return new WaitForSeconds(1);
+
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(nextLevelString);
+
+        // Wait until the asynchronous scene fully loads
+        while (!asyncLoad.isDone) {
+            
+            yield return null;
+        }
     }
 }

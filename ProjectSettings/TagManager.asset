@@ -10,6 +10,8 @@ TagManager:
   - S
   - D
   - E
+  - Skull
+  - EndZone
   layers:
   - Default
   - TransparentFX
