@@ -4149,7 +4149,7 @@ MonoBehaviour:
   fadeToBlackPanel: {fileID: 1611449230}
   mouseCursor: {fileID: 1468740156}
   runSpeed: 3
-  manaDecay: 0
+  manaDecay: 30
   maxMana: 100
   jumpHeight: 3
   floatManaCost: 0.5
