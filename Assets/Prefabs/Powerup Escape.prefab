@@ -14,8 +14,8 @@ GameObject:
   - component: {fileID: 6411703391368366181}
   - component: {fileID: 6411703391368366180}
   m_Layer: 0
-  m_Name: Powerup D
-  m_TagString: D
+  m_Name: Powerup Escape
+  m_TagString: Escape
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -73,7 +73,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 4127431560205320454, guid: 23af9e5ff258dfc439b036fb43b39937,
+  m_Sprite: {fileID: -8696775749867770997, guid: 32660775e9a7ef342b6570e4d24b04cd,
     type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -102,14 +102,14 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 0.16, y: 0.16}
+    oldSize: {x: 0.32, y: 0.32}
     newSize: {x: 0.32, y: 0.16}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 0.16, y: 0.16}
+  m_Size: {x: 0.32, y: 0.32}
   m_EdgeRadius: 0
 --- !u!198 &6411703391368366181
 ParticleSystem:
@@ -301,7 +301,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 1, g: 1, b: 1, a: 1}
-      maxColor: {r: 0, g: 1, b: 1, a: 0.53333336}
+      maxColor: {r: 0.603, g: 0, b: 1, a: 0.53333336}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}

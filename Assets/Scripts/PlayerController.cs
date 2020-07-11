@@ -1,17 +1,23 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour {
+    public string nextLevelString;
+
+    public Canvas canvas;
     public GameObject manaBar;
     public GameObject gemMenuPanel;
+    public GameObject fadeToBlackPanel;
+    public GameObject mouseCursor;
     public float runSpeed;
     public float manaDecay;
     public float maxMana;
 
     public float jumpHeight;
     public float floatManaCost;
-    public PhysicsMaterial2D bouncyMaterial;
 
     public Transform groundCheckTop_Left;
     public Transform groundCheckBottomRight;
@@ -21,11 +27,17 @@ public class PlayerController : MonoBehaviour {
     private bool grounded = true;
     private bool prevPWM = false;
 
+    private bool noUpdate = false;
+
     private float mana;
     private List<string> disabledKeys;
 
     private Dictionary<string, GameObject> UIButtons;
     private Dictionary<string, System.Action> restoreFunctions;
+
+    private float fadeFrameCount = 0.0f;
+    private float fadeFramesTotal = 60.0f;
+    private bool fadingOut = false;
 
     // Start is called before the first frame update
     void Start()
@@ -42,23 +54,49 @@ public class PlayerController : MonoBehaviour {
             UIButtons[UIChild.name.ToLower()] = UIChild.gameObject;
             restoreFunctions[UIChild.name.ToLower()] = Noop;
         }
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = false;
     }
 
     void FixedUpdate() {
         grounded = Physics2D.OverlapArea(groundCheckTop_Left.position, groundCheckBottomRight.position, groundLayers);
-    }
-
-    private void OnTriggerEnter2D(Collider2D collision) {
-        if (disabledKeys.Find(x => x.Equals(collision.tag.ToLower())) != null) {
-            ReclaimKey(collision.tag);
-            Destroy(collision.gameObject);
+        if (!fadingOut) {
+            fadeToBlackPanel.GetComponent<Image>().color = new Color(0, 0, 0, (fadeFramesTotal - Mathf.Min(fadeFrameCount, fadeFramesTotal)) / fadeFramesTotal);
+            fadeFrameCount++;
+        } else {
+            fadeToBlackPanel.GetComponent<Image>().color = new Color(0, 0, 0, (fadeFramesTotal - Mathf.Max(fadeFrameCount, 0)) / fadeFramesTotal);
+            fadeFrameCount--;
         }
     }
 
-    // Update is called once per frame
-    void Update() {
+    private void OnTriggerStay2D(Collider2D collision) {
+        if (disabledKeys.Find(x => x.Equals(collision.tag.ToLower())) != null) {
+            ReclaimKey(collision.tag);
+            Destroy(collision.gameObject);
+        } else if (collision.CompareTag("Skull")) {
+            Destroy(collision.gameObject);
+            mana -= 10;
+        }
+    }
+    private void OnTriggerEnter2D(Collider2D collision) {
+        if (collision.CompareTag("EndZone") && !noUpdate) {
+            NextLevel();
+        }
+    }
 
-        mana -= manaDecay * Time.deltaTime;
+        // Update is called once per frame
+    void Update() {
+        if (GetKeyPress(KeyCode.Escape)) {
+            Quit();
+        }
+        if (disabledKeys.Find(x => x.Equals("mouse")) == null) {
+            UpdateCursor();
+        }
+        if (noUpdate) {
+            return;
+        }
+
+        mana -= (manaDecay - (disabledKeys.Count * 5)) * Time.deltaTime;
 
         if (mana <= 0 || transform.position.y < -1.0f) {
             GameOver();
@@ -118,6 +156,12 @@ public class PlayerController : MonoBehaviour {
         gemMenuPanel.SetActive(!gemMenuPanel.activeSelf);
     }
 
+    void UpdateCursor() {
+        Vector2 pos;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvas.transform as RectTransform, Input.mousePosition, canvas.worldCamera, out pos);
+        mouseCursor.transform.position = canvas.transform.TransformPoint(pos);
+    }
+
     bool GetKeyPress(KeyCode key) {
         if (disabledKeys.Find(x => x.Equals(key.ToString().ToLower())) != null) {
             return DisabledKeyEffect(key);
@@ -149,12 +193,6 @@ public class PlayerController : MonoBehaviour {
                 AddMana(20);
                 break;
             case "s":
-                PhysicsMaterial2D prevMat = rigidBody.sharedMaterial;
-                void SRestore() {
-                    rigidBody.sharedMaterial = prevMat;
-                }
-                rigidBody.sharedMaterial = bouncyMaterial;
-                restoreFunctions[key] = SRestore;
                 AddMana(20);
                 break;
             case "d":
@@ -174,6 +212,14 @@ public class PlayerController : MonoBehaviour {
                     jumpHeight = prevJumpHeight;
                 }
                 restoreFunctions[key] = SpaceRestore;
+                AddMana(20);
+                break;
+            case "mouse":
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+                AddMana(100);
+                break;
+            case "escape":
                 AddMana(100);
                 break;
             default:
@@ -190,6 +236,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     bool DisabledKeyEffect(KeyCode key) {
+        bool inCycle;
         switch (key) {
             case KeyCode.W:
                 rigidBody.gravityScale = 0.5f/disabledKeys.Count;
@@ -197,8 +244,7 @@ public class PlayerController : MonoBehaviour {
             case KeyCode.A:
                 return (int)Time.time % disabledKeys.Count == 0;
             case KeyCode.S:
-                rigidBody.sharedMaterial.bounciness = disabledKeys.Count;
-                bool inCycle = (int)(Time.time * 2) % (disabledKeys.Count * 2) == 0;
+                inCycle = (int)(Time.time * 2) % (disabledKeys.Count * 2) == 0;
                 if (!prevPWM) {
                     prevPWM = inCycle;
                     return inCycle;
@@ -209,10 +255,18 @@ public class PlayerController : MonoBehaviour {
                 runSpeed = disabledKeys.Count + 2;
                 return true;
             case KeyCode.E:
+                inCycle = (int)(Time.time * 2) % (disabledKeys.Count * 2) == 0;
+                if (!prevPWM) {
+                    prevPWM = inCycle;
+                    return inCycle;
+                }
+                prevPWM = inCycle;
                 return false;
             case KeyCode.Space:
-                jumpHeight = disabledKeys.Count;
+                jumpHeight = disabledKeys.Count + 2;
                 return true;
+            case KeyCode.Escape:
+                return Random.value < 0.001f;
             default:
                 return false;
         }
@@ -224,5 +278,37 @@ public class PlayerController : MonoBehaviour {
 
     void GameOver() {
         Debug.Log("YOU LOSE");
+        noUpdate = true;
+
+        if (disabledKeys.Find(x => x.Equals("escape")) != null) {
+            Quit();
+        }
+    }
+
+    void Quit() {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+         Application.Quit();
+#endif
+    }
+
+    void NextLevel() {
+        noUpdate = true;
+        fadingOut = true;
+        fadeFrameCount = fadeFramesTotal;
+        StartCoroutine(LoadLevel());
+    }
+
+    IEnumerator LoadLevel() {
+        yield return new WaitForSeconds(1);
+
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(nextLevelString);
+
+        // Wait until the asynchronous scene fully loads
+        while (!asyncLoad.isDone) {
+            
+            yield return null;
+        }
     }
 }

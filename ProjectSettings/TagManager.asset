@@ -10,6 +10,10 @@ TagManager:
   - S
   - D
   - E
+  - Skull
+  - EndZone
+  - Escape
+  - Mouse
   layers:
   - Default
   - TransparentFX
