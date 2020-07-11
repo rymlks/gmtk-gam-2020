@@ -7,9 +7,11 @@ using UnityEngine.UI;
 public class PlayerController : MonoBehaviour {
     public string nextLevelString;
 
+    public Canvas canvas;
     public GameObject manaBar;
     public GameObject gemMenuPanel;
     public GameObject fadeToBlackPanel;
+    public GameObject mouseCursor;
     public float runSpeed;
     public float manaDecay;
     public float maxMana;
@@ -52,6 +54,8 @@ public class PlayerController : MonoBehaviour {
             UIButtons[UIChild.name.ToLower()] = UIChild.gameObject;
             restoreFunctions[UIChild.name.ToLower()] = Noop;
         }
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = false;
     }
 
     void FixedUpdate() {
@@ -82,6 +86,12 @@ public class PlayerController : MonoBehaviour {
 
         // Update is called once per frame
     void Update() {
+        if (GetKeyPress(KeyCode.Escape)) {
+            Quit();
+        }
+        if (disabledKeys.Find(x => x.Equals("mouse")) == null) {
+            UpdateCursor();
+        }
         if (noUpdate) {
             return;
         }
@@ -146,6 +156,12 @@ public class PlayerController : MonoBehaviour {
         gemMenuPanel.SetActive(!gemMenuPanel.activeSelf);
     }
 
+    void UpdateCursor() {
+        Vector2 pos;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvas.transform as RectTransform, Input.mousePosition, canvas.worldCamera, out pos);
+        mouseCursor.transform.position = canvas.transform.TransformPoint(pos);
+    }
+
     bool GetKeyPress(KeyCode key) {
         if (disabledKeys.Find(x => x.Equals(key.ToString().ToLower())) != null) {
             return DisabledKeyEffect(key);
@@ -166,7 +182,7 @@ public class PlayerController : MonoBehaviour {
 
         switch(key) {
             case "w":
-                AddMana(100);
+                AddMana(20);
                 float gscale = rigidBody.gravityScale;
                 void WRestore() {
                     rigidBody.gravityScale = gscale;
@@ -174,10 +190,10 @@ public class PlayerController : MonoBehaviour {
                 restoreFunctions[key] = WRestore;
                 break;
             case "a":
-                AddMana(100);
+                AddMana(20);
                 break;
             case "s":
-                AddMana(100);
+                AddMana(20);
                 break;
             case "d":
                 float prevSpeed = runSpeed;
@@ -185,10 +201,10 @@ public class PlayerController : MonoBehaviour {
                     runSpeed = prevSpeed;
                 }
                 restoreFunctions[key] = DRestore;
-                AddMana(100);
+                AddMana(20);
                 break;
             case "e":
-                AddMana(100);
+                AddMana(20);
                 break;
             case "space":
                 float prevJumpHeight = jumpHeight;
@@ -196,6 +212,14 @@ public class PlayerController : MonoBehaviour {
                     jumpHeight = prevJumpHeight;
                 }
                 restoreFunctions[key] = SpaceRestore;
+                AddMana(20);
+                break;
+            case "mouse":
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+                AddMana(100);
+                break;
+            case "escape":
                 AddMana(100);
                 break;
             default:
@@ -241,6 +265,8 @@ public class PlayerController : MonoBehaviour {
             case KeyCode.Space:
                 jumpHeight = disabledKeys.Count + 2;
                 return true;
+            case KeyCode.Escape:
+                return Random.value < 0.001f;
             default:
                 return false;
         }
@@ -253,6 +279,18 @@ public class PlayerController : MonoBehaviour {
     void GameOver() {
         Debug.Log("YOU LOSE");
         noUpdate = true;
+
+        if (disabledKeys.Find(x => x.Equals("escape")) != null) {
+            Quit();
+        }
+    }
+
+    void Quit() {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+         Application.Quit();
+#endif
     }
 
     void NextLevel() {
