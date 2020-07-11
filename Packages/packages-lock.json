@@ -1,8 +1,8 @@
 {
   "dependencies": {
     "com.unity.2d.animation": {
-      "version": "3.2.3",
-      "depth": 0,
+      "version": "3.2.2",
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.2d.common": "2.0.2",
