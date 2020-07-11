@@ -10,6 +10,8 @@ public class PlayerController : MonoBehaviour {
     public float maxMana;
 
     public float jumpHeight;
+    public float floatManaCost;
+    public PhysicsMaterial2D bouncyMaterial;
 
     public Transform groundCheckTop_Left;
     public Transform groundCheckBottomRight;
@@ -17,11 +19,13 @@ public class PlayerController : MonoBehaviour {
 
     private Rigidbody2D rigidBody;
     private bool grounded = true;
+    private bool prevPWM = false;
 
     private float mana;
     private List<string> disabledKeys;
 
     private Dictionary<string, GameObject> UIButtons;
+    private Dictionary<string, System.Action> restoreFunctions;
 
     // Start is called before the first frame update
     void Start()
@@ -31,9 +35,12 @@ public class PlayerController : MonoBehaviour {
         gemMenuPanel.SetActive(false);
         disabledKeys = new List<string>();
         UIButtons = new Dictionary<string, GameObject>();
+        restoreFunctions = new Dictionary<string, System.Action>();
+        void Noop() { }
 
-        foreach(Transform UIChild in gemMenuPanel.transform) {
+        foreach (Transform UIChild in gemMenuPanel.transform) {
             UIButtons[UIChild.name.ToLower()] = UIChild.gameObject;
+            restoreFunctions[UIChild.name.ToLower()] = Noop;
         }
     }
 
@@ -53,7 +60,7 @@ public class PlayerController : MonoBehaviour {
 
         mana -= manaDecay * Time.deltaTime;
 
-        if (mana <= 0) {
+        if (mana <= 0 || transform.position.y < -1.0f) {
             GameOver();
             manaBar.transform.localScale = new Vector3(0.0f, 1.0f, 1.0f);
         } else {
@@ -65,21 +72,46 @@ public class PlayerController : MonoBehaviour {
                 ToggleMenu();
             }
 
+            if (GetKeyDown(KeyCode.W)) {
+                Float();
+            }
+
+            if (GetKeyPress(KeyCode.S)) {
+                Slam();
+            }
+
             if (GetKeyDown(KeyCode.D)) {
-                rigidBody.velocity = new Vector2(runSpeed, rigidBody.velocity.y);
+                MoveForward();
             }
 
             if (GetKeyDown(KeyCode.A)) {
-                rigidBody.velocity = new Vector2(-runSpeed, rigidBody.velocity.y);
+                MoveBackward();
             }
 
             manaBar.transform.localScale = new Vector3(mana / maxMana, 1.0f, 1.0f);
         }
     }
 
+    void MoveForward() {
+        rigidBody.velocity = new Vector2(runSpeed, rigidBody.velocity.y);
+    }
+
+    void MoveBackward() {
+        rigidBody.velocity = new Vector2(-runSpeed, rigidBody.velocity.y);
+    }
+
     void Jump() {
         if (grounded)
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, jumpHeight);
+    }
+
+    void Slam() {
+        rigidBody.velocity = new Vector2(rigidBody.velocity.x, -jumpHeight);
+    }
+
+    void Float() {
+        mana -= floatManaCost;
+        rigidBody.velocity = new Vector2(rigidBody.velocity.x, 3.0f);
     }
 
     void ToggleMenu() {
@@ -107,21 +139,45 @@ public class PlayerController : MonoBehaviour {
         switch(key) {
             case "w":
                 AddMana(20);
+                float gscale = rigidBody.gravityScale;
+                void WRestore() {
+                    rigidBody.gravityScale = gscale;
+                }
+                restoreFunctions[key] = WRestore;
                 break;
             case "a":
                 AddMana(20);
                 break;
             case "s":
+                PhysicsMaterial2D prevMat = rigidBody.sharedMaterial;
+                void SRestore() {
+                    rigidBody.sharedMaterial = prevMat;
+                }
+                rigidBody.sharedMaterial = bouncyMaterial;
+                restoreFunctions[key] = SRestore;
                 AddMana(20);
                 break;
             case "d":
+                float prevSpeed = runSpeed;
+                void DRestore() {
+                    runSpeed = prevSpeed;
+                }
+                restoreFunctions[key] = DRestore;
                 AddMana(20);
                 break;
             case "e":
                 AddMana(20);
                 break;
             case "space":
+                float prevJumpHeight = jumpHeight;
+                void SpaceRestore() {
+                    jumpHeight = prevJumpHeight;
+                }
+                restoreFunctions[key] = SpaceRestore;
                 AddMana(100);
+                break;
+            default:
+                AddMana(20);
                 break;
         }
     }
@@ -130,22 +186,27 @@ public class PlayerController : MonoBehaviour {
         key = key.ToLower();
         disabledKeys.Remove(key);
         UIButtons[key].GetComponent<DisableOnClick>().ReEnable();
-    }
-
-    void AddMana(float amount) {
-        mana = Mathf.Clamp(mana + amount, 0.0f, maxMana);
+        restoreFunctions[key]();
     }
 
     bool DisabledKeyEffect(KeyCode key) {
         switch (key) {
             case KeyCode.W:
+                rigidBody.gravityScale = 0.5f/disabledKeys.Count;
                 return false;
             case KeyCode.A:
                 return (int)Time.time % disabledKeys.Count == 0;
             case KeyCode.S:
+                rigidBody.sharedMaterial.bounciness = disabledKeys.Count;
+                bool inCycle = (int)(Time.time * 2) % (disabledKeys.Count * 2) == 0;
+                if (!prevPWM) {
+                    prevPWM = inCycle;
+                    return inCycle;
+                }
+                prevPWM = inCycle;
                 return false;
             case KeyCode.D:
-                runSpeed = disabledKeys.Count;
+                runSpeed = disabledKeys.Count + 2;
                 return true;
             case KeyCode.E:
                 return false;
@@ -155,6 +216,10 @@ public class PlayerController : MonoBehaviour {
             default:
                 return false;
         }
+    }
+
+    void AddMana(float amount) {
+        mana = Mathf.Clamp(mana + amount, 0.0f, maxMana);
     }
 
     void GameOver() {
