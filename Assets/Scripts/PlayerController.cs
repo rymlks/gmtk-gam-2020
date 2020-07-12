@@ -11,7 +11,6 @@ public class PlayerController : MonoBehaviour {
     public GameObject manaBar;
     public GameObject gemMenuPanel;
     public GameObject fadeToBlackPanel;
-    public GameObject mouseCursor;
     public float runSpeed;
     public float manaDecay;
     public float maxMana;
@@ -56,6 +55,9 @@ public class PlayerController : MonoBehaviour {
         }
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = false;
+        canvas.gameObject.SetActive(true);
+
+        GameObject.Find("GameManager").GetComponent<PersistentData>().level = SceneManager.GetActiveScene().name;
     }
 
     void FixedUpdate() {
@@ -88,9 +90,6 @@ public class PlayerController : MonoBehaviour {
     void Update() {
         if (GetKeyPress(KeyCode.Escape)) {
             Quit();
-        }
-        if (disabledKeys.Find(x => x.Equals("mouse")) == null) {
-            UpdateCursor();
         }
         if (noUpdate) {
             return;
@@ -154,12 +153,6 @@ public class PlayerController : MonoBehaviour {
 
     void ToggleMenu() {
         gemMenuPanel.SetActive(!gemMenuPanel.activeSelf);
-    }
-
-    void UpdateCursor() {
-        Vector2 pos;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvas.transform as RectTransform, Input.mousePosition, canvas.worldCamera, out pos);
-        mouseCursor.transform.position = canvas.transform.TransformPoint(pos);
     }
 
     bool GetKeyPress(KeyCode key) {
@@ -284,34 +277,53 @@ public class PlayerController : MonoBehaviour {
         Debug.Log("YOU LOSE");
         noUpdate = true;
 
-        if (disabledKeys.Find(x => x.Equals("escape")) != null) {
-            Quit();
-        }
+        StartCoroutine(LoadLevel(SceneManager.GetActiveScene().name));
     }
 
     void Quit() {
-#if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-#else
-         Application.Quit();
-#endif
+        StartCoroutine(LoadLevelImmediate("Main Screen"));
     }
 
     void NextLevel() {
-        noUpdate = true;
-        fadingOut = true;
-        fadeFrameCount = fadeFramesTotal;
         StartCoroutine(LoadLevel());
     }
 
+    IEnumerator LoadLevel(string level) {
+        noUpdate = true;
+        fadingOut = true;
+        fadeFrameCount = fadeFramesTotal;
+        yield return new WaitForSeconds(1);
+
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(level);
+
+        // Wait until the asynchronous scene fully loads
+        while (!asyncLoad.isDone) {
+
+            yield return null;
+        }
+    }
+
     IEnumerator LoadLevel() {
+        noUpdate = true;
+        fadingOut = true;
+        fadeFrameCount = fadeFramesTotal;
         yield return new WaitForSeconds(1);
 
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(nextLevelString);
 
         // Wait until the asynchronous scene fully loads
         while (!asyncLoad.isDone) {
-            
+
+            yield return null;
+        }
+    }
+
+    IEnumerator LoadLevelImmediate(string level) {
+        AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(level);
+
+        // Wait until the asynchronous scene fully loads
+        while (!asyncLoad.isDone) {
+
             yield return null;
         }
     }
