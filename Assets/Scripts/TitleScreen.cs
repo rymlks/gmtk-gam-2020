@@ -52,4 +52,8 @@ public class TitleScreen : MonoBehaviour
             yield return null;
         }
     }
+
+    public void OpenLink(string link) {
+        Application.OpenURL(link);
+    }
 }
