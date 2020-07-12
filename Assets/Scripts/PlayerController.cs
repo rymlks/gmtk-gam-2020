@@ -7,6 +7,13 @@ using UnityEngine.UI;
 public class PlayerController : MonoBehaviour {
     public string nextLevelString;
 
+    public AudioSource jump;
+    public AudioSource floating;
+    public AudioSource slam;
+    public AudioSource skull;
+    public AudioSource smash;
+    public AudioSource died;
+
     public Canvas canvas;
     public GameObject manaBar;
     public GameObject gemMenuPanel;
@@ -61,7 +68,6 @@ public class PlayerController : MonoBehaviour {
     }
 
     void FixedUpdate() {
-        grounded = Physics2D.OverlapArea(groundCheckTop_Left.position, groundCheckBottomRight.position, groundLayers);
         if (!fadingOut) {
             fadeToBlackPanel.GetComponent<Image>().color = new Color(0, 0, 0, (fadeFramesTotal - Mathf.Min(fadeFrameCount, fadeFramesTotal)) / fadeFramesTotal);
             fadeFrameCount++;
@@ -88,6 +94,7 @@ public class PlayerController : MonoBehaviour {
 
         // Update is called once per frame
     void Update() {
+        grounded = Physics2D.OverlapArea(groundCheckTop_Left.position, groundCheckBottomRight.position, groundLayers);
         if (GetKeyPress(KeyCode.Escape)) {
             Quit();
         }
@@ -111,6 +118,8 @@ public class PlayerController : MonoBehaviour {
 
             if (GetKeyDown(KeyCode.W)) {
                 Float();
+            } else {
+                floating.Stop();
             }
 
             if (GetKeyPress(KeyCode.S)) {
@@ -138,15 +147,21 @@ public class PlayerController : MonoBehaviour {
     }
 
     void Jump() {
-        if (grounded)
+        if (grounded) {
+            jump.Play();
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, jumpHeight);
+        }
     }
 
     void Slam() {
+        slam.Play();
         rigidBody.velocity = new Vector2(rigidBody.velocity.x, -jumpHeight);
     }
 
     void Float() {
+        if (!floating.isPlaying) {
+            floating.Play();
+        }
         mana -= floatManaCost;
         rigidBody.velocity = new Vector2(rigidBody.velocity.x, 3.0f);
     }
@@ -173,9 +188,12 @@ public class PlayerController : MonoBehaviour {
         key = key.ToLower();
         disabledKeys.Add(key);
 
+        smash.pitch = Random.Range(1.0f, 1.2f);
+        smash.Play();
+
         switch(key) {
             case "w":
-                AddMana(20);
+                AddMana(50);
                 float gscale = rigidBody.gravityScale;
                 void WRestore() {
                     rigidBody.gravityScale = gscale;
@@ -276,7 +294,7 @@ public class PlayerController : MonoBehaviour {
     void GameOver() {
         Debug.Log("YOU LOSE");
         noUpdate = true;
-
+        died.Play();
         StartCoroutine(LoadLevel(SceneManager.GetActiveScene().name));
     }
 
