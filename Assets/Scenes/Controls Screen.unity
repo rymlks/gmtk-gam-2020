@@ -231,7 +231,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 52, y: -53}
-  m_SizeDelta: {x: 64, y: 64}
+  m_SizeDelta: {x: 56, y: 62}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &44317638
 MonoBehaviour:
@@ -305,7 +305,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -3, y: -121.855064}
+  m_AnchoredPosition: {x: -3, y: -113.81}
   m_SizeDelta: {x: 474.76086, y: 78.60152}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &128856540
@@ -1203,8 +1203,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 136.49, y: 0.00015068}
-  m_SizeDelta: {x: 387.60745, y: 102.93169}
+  m_AnchoredPosition: {x: 126.45, y: -7.96}
+  m_SizeDelta: {x: 355.3232, y: 128.54239}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &364629496
 MonoBehaviour:
@@ -3273,8 +3273,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 285, y: -63.963005}
-  m_SizeDelta: {x: 32, y: 32}
+  m_AnchoredPosition: {x: 253, y: -50.544}
+  m_SizeDelta: {x: 18, y: 31}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1406940866
 MonoBehaviour:
@@ -4151,7 +4151,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 138, y: -27.044006}
+  m_AnchoredPosition: {x: 117.77, y: -27.044}
   m_SizeDelta: {x: 32, y: 16}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1784643396
@@ -4209,7 +4209,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1805742220
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4820,7 +4820,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2018372045
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5183,7 +5183,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: '* Most of the time.'
+  m_Text: '* When not broken.'
 --- !u!222 &2132861794
 CanvasRenderer:
   m_ObjectHideFlags: 0
