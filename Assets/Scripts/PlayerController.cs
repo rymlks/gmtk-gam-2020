@@ -96,7 +96,7 @@ public class PlayerController : MonoBehaviour {
             return;
         }
 
-        mana -= (manaDecay - (disabledKeys.Count * 5)) * Time.deltaTime;
+        mana -= manaDecay * Time.deltaTime / (disabledKeys.Count + 1);
 
         if (mana <= 0 || transform.position.y < -1.0f) {
             GameOver();
@@ -215,8 +215,12 @@ public class PlayerController : MonoBehaviour {
                 AddMana(20);
                 break;
             case "mouse":
+                void MouseRestore() {
+                    Cursor.lockState = CursorLockMode.None;
+                }
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
+                restoreFunctions[key] = MouseRestore;
                 AddMana(100);
                 break;
             case "escape":
